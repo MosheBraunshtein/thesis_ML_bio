@@ -1,9 +1,8 @@
-from pathlib import Path
 import numpy as np
-import json
 from scripts.config import DATA_PATH, label_to_number
 import os
 import torch
+from torch.nn.utils.rnn import pad_sequence
 
 class DataExtractor:
     """A class for extracting dataset files dynamically based on dataset name and task."""
@@ -13,13 +12,13 @@ class DataExtractor:
         self.dataset_path = DATA_PATH / dataset_name
         if not self.dataset_path.exists():
             raise FileNotFoundError(f"Dataset directory not found: {self.dataset_path}")
-        self.kinematic_sync = []
-        self.gesture_sync = []
-        self.__classification = []
         self.count_files = 0
 
     def extract(self, task, batch_size=1, verbose = False, dtype = torch.float32):
         """Extracts data based on dataset and task."""
+
+        kinematics_list = []
+        gestures_list = []
 
         transcriptions_dir_path = self.dataset_path / f"{task}" / "transcriptions" 
 
@@ -36,12 +35,14 @@ class DataExtractor:
         for file in files:
             file_path_transcription = transcriptions_dir_path / file
             file_path_kinematic = kinematics_dir_path / file
+            classification = []
+            self.count_files += 1
 
             try:
                 with open(file_path_transcription, 'r') as file_r:
                     for line in file_r:
                         start, end, label = line.split()
-                        self.__classification.append((int(start), int(end), label))
+                        classification.append((int(start), int(end), label))
                         
             except FileNotFoundError:
                 raise FileNotFoundError(f"File not found: {file_path_transcription}")        
@@ -56,23 +57,24 @@ class DataExtractor:
             if verbose : print(file," ",self.count_files," has ",len(self.__classification)," gestures")
 
             # cut kinematics by transcription
-            for item in self.__classification:
+            for item in classification:
                 start, end, label = item
 
-                num_label = torch.tensor(label_to_number(label),dtype=dtype)
+                num_label = label_to_number(label)
 
                 start_idx = start - 1
                 end_idx = end
-                rows = torch.tensor(kinematics[start_idx:end_idx, :],dtype=dtype)
+                # assert end_idx-start_idx < 2000, file
+                rows = kinematics[start_idx:end_idx, :]
+                kinematics_of_gesture = torch.tensor(rows,dtype=dtype)
 
-                
-                self.gesture_sync.append(num_label)
-                self.kinematic_sync.append(rows)
-            
-            self.__classification = []
-            self.count_files += 1
+                gestures_list.append(num_label)
+                kinematics_list.append(kinematics_of_gesture)
 
-        return self.kinematic_sync, self.gesture_sync
+            padded_tensors = pad_sequence(kinematics_list, batch_first=True, padding_value=0)
+            target_tensor = torch.tensor(gestures_list,dtype=dtype)
+
+        return padded_tensors, target_tensor
 
             
 

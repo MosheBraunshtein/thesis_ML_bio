@@ -5,4 +5,4 @@ import torch
 extractor = DataExtractor("JIGSAWS")
 kinematics,gestures = extractor.extract(task="needle_passing")
 
-# print(gestures[200])
+print("kinematic shape: ",gestures.shape)
