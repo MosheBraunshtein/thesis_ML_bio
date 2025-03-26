@@ -1,43 +1,64 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.nn.utils.rnn import pad_sequence
+from models.lstm2.model import LSTMModel
+from torch.utils.data import Dataset, DataLoader
 from scripts.data_extractor import DataExtractor
-from model import LSTMModel
+from scripts.preprocessing import PreProcessing
 
-# Load your test dataset (replace with actual data loading logic)
-def load_test_data(batch_size):
-    extractor = DataExtractor("JIGSAWS")
-    kinematics,gesture = extractor.extract(task="needle_passing") # (batch_size,)
-    
-    # to tensor 
-    
-    # Assuming X_test is a tensor of shape (batch_size, sequence_length, input_size)
-    # Example shape: (batch_size=10, seq_len=5, input_size=3)
-    gesture = torch.tensor(["G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12","G13","G14","G15"])
-    return kinematics, gesture
 
-def batch_data_set():
-# Load trained model (replace 'model.pth' with your trained model file)
-input_size = 3
-hidden_size = 16
-output_size = 2  # Adjust as needed
-model = LSTMModel(input_size, hidden_size, output_size)
-model.load_state_dict(torch.load("model.pth"))
-model.eval()  # Set to evaluation mode
+class KinematicsDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = X # torch tensor: [539, 2660, 76]
+        self.y = y  # torch tensor: [539]
 
-# Load test data
-X_test, y_test = load_test_data()
+    def __len__(self):
+        return len(self.y)
 
-# Perform inference
-with torch.no_grad():
-    outputs = model(X_test)
-    predicted = torch.argmax(outputs, dim=1)
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
 
-# Print results
-print("Predicted labels:", predicted.numpy())
-print("Actual labels:", y_test.numpy())
+# extract data    
+extractor = DataExtractor("JIGSAWS")
+data,targets = extractor.extract(task="Knot_Tying") 
 
-# Optional: Compute accuracy
-accuracy = (predicted == y_test).float().mean().item()
-print(f"Test Accuracy: {accuracy * 100:.2f}%")
+# preprocessing 
+preprocess = PreProcessing(data)
+
+preprocess.padding_dataset()
+
+dataset = KinematicsDataset(preprocess.data, targets) # preprocess.data = torch tensor: [#_samples, sequence length, #_input_size_features]
+
+train_loader = DataLoader(dataset, batch_size=5, shuffle=True)
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = LSTMModel().to(device) 
+
+criterion = nn.CrossEntropyLoss() # 
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+num_epochs = 15
+
+for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+    correct = 0
+
+    for inputs, labels in train_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+        # print(f"Inputs Shape: {inputs.shape}, Type: {inputs.dtype}, Device: {inputs.device}")
+        # print(f"Labels Shape: {labels.shape}, Type: {labels.dtype}, Device: {labels.device}")
+        # print("Unique labels:", torch.unique(labels))
+        
+        optimizer.zero_grad()
+        outputs = model(inputs) # tensor(batch_size,probability_value_for_each_class=12)
+        
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+        _, preds = torch.max(outputs, 1)
+        correct += (preds == labels).sum().item()
+
+    acc = correct / len(dataset)
+    print(f"Epoch {epoch+1}: Loss = {running_loss/len(train_loader):.4f}, Accuracy = {acc:.4f}")
