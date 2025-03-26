@@ -27,7 +27,28 @@ class PreProcessing:
 
     def pchip(self):
         """ Piecewise Cubic Hermite Interpolating Polynomial interpolation """
+        self.print_data_type_and_size()
         print("PCHIP processing ...")
+
+        # the logical sense is to create more time steps 
+        max_timestep_sample = max(self.data, key=lambda x: x.shape[0])
+        max_timestep = max_timestep_sample.shape[0]
+        interpolate_data = []
+        for sample in self.data:
+            len = sample.shape[0]
+            t_original = np.linspace(0, 1, len)  # Original time steps
+            t_target = np.linspace(0, 1, max_timestep)        # New time steps
+            
+            interpolated_features = np.zeros((max_timestep,76))
+            for feature in range(76):
+                pchip_interpolator = PchipInterpolator(t_original,sample[:,feature])
+                interpolated_features[:,feature] = pchip_interpolator(t_target)
+
+            interpolate_data.append(interpolated_features)
+
+        self.data = interpolate_data
+        self.data = self.to_tensor()
+        
 
                  
     def normalization(self):
@@ -36,4 +57,4 @@ class PreProcessing:
 
     def print_data_type_and_size(self):
         print("data type ",type(self.data))
-        print("data size ",self.data.size())    
+        print("data element type ",type(self.data[0]))    

@@ -24,7 +24,7 @@ data,targets = extractor.extract(task="Knot_Tying")
 # preprocessing 
 preprocess = PreProcessing(data)
 
-preprocess.padding_dataset()
+preprocess.pchip()
 
 dataset = KinematicsDataset(preprocess.data, targets) # preprocess.data = torch tensor: [#_samples, sequence length, #_input_size_features]
 
