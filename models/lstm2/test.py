@@ -19,6 +19,10 @@ data,targets = extractor.extract(task="needle_passing")
 # preprocessing 
 preprocess = PreProcessing(data)
 preprocess.pchip()
+preprocess.normalization()
+# preprocess.print_features_mean_std_over_a_sample()
+
+preprocess.to_tensor()
 
 # create dataset object
 dataset = KinematicsDataset(preprocess.data, targets)
