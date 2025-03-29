@@ -27,8 +27,7 @@ class PreProcessing:
 
     def pchip(self):
         """ Piecewise Cubic Hermite Interpolating Polynomial interpolation """
-        self.print_data_type_and_size()
-        print("PCHIP processing ...")
+        print("PCHIP processing ...\n")
 
         # the logical sense is to create more time steps 
         max_timestep_sample = max(self.data, key=lambda x: x.shape[0])

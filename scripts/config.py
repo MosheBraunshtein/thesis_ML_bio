@@ -47,3 +47,41 @@ def label_to_number(label):
         return 13
     elif label == "G15":
         return 14
+    
+def number_to_label(number):
+    if number == 0:
+        return "G1"
+    elif number == 1:
+        return "G2"
+    elif number == 2:
+        return "G3"
+    elif number == 3:
+        return "G4"
+    elif number == 4:
+        return "G5"
+    elif number == 5:
+        return "G6"
+    elif number == 6:
+        return "G7"
+    elif number == 7:
+        return "G8"
+    elif number == 8:
+        return "G9"
+    elif number == 9:
+        return "G10"
+    elif number == 10:
+        return "G11"
+    elif number == 11:
+        return "G12"
+    elif number == 12:
+        return "G13"
+    elif number == 13:
+        return "G14"
+    elif number == 14:
+        return "G15"
+
+# ANSI color codes
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"

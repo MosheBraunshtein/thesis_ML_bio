@@ -4,18 +4,8 @@ from models.lstm2.model import LSTMModel
 from torch.utils.data import Dataset, DataLoader
 from scripts.data_extractor import DataExtractor
 from scripts.preprocessing import PreProcessing
+from scripts.dataset_creator import KinematicsDataset
 
-
-class KinematicsDataset(Dataset):
-    def __init__(self, X, y):
-        self.X = X # torch tensor: [539, 2660, 76]
-        self.y = y  # torch tensor: [539]
-
-    def __len__(self):
-        return len(self.y)
-
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
 
 # extract data    
 extractor = DataExtractor("JIGSAWS")
@@ -33,7 +23,7 @@ train_loader = DataLoader(dataset, batch_size=5, shuffle=True)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = LSTMModel().to(device) 
 
-criterion = nn.CrossEntropyLoss() # 
+criterion = nn.CrossEntropyLoss() 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 num_epochs = 15
@@ -45,9 +35,6 @@ for epoch in range(num_epochs):
 
     for inputs, labels in train_loader:
         inputs, labels = inputs.to(device), labels.to(device)
-        # print(f"Inputs Shape: {inputs.shape}, Type: {inputs.dtype}, Device: {inputs.device}")
-        # print(f"Labels Shape: {labels.shape}, Type: {labels.dtype}, Device: {labels.device}")
-        # print("Unique labels:", torch.unique(labels))
         
         optimizer.zero_grad()
         outputs = model(inputs) # tensor(batch_size,probability_value_for_each_class=12)
