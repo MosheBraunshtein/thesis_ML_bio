@@ -24,13 +24,13 @@ class PreProcessing:
     
     def to_tensor(self,dtype = torch.float32):
         print("convert dataset to tensor type float32 ...\n")
-        self.data = [torch.tensor(arr,dtype=dtype) for arr in self.data]
+        self.data =  [torch.tensor(arr,dtype=dtype) for arr in self.data]
 
     def padding_dataset(self,padded_value=0):
         """ padding all sequences with value in order to ger fix sequences length"""
-        tensor_list = self.to_tensor()
+        self.to_tensor()
         print("padding dataset with value ",padded_value," ...\n")
-        self.data = pad_sequence(tensor_list, batch_first=True, padding_value=0)
+        self.data = pad_sequence(self.data, batch_first=True, padding_value=0)
         
 
 
@@ -67,11 +67,14 @@ class PreProcessing:
                 feature_over_time = sample[:,feature]
                 feature_mean = np.mean(feature_over_time)
                 feature_std = np.std(feature_over_time)
-                assert feature_std != 0, "feature std is zero , can't normalize feature "
+                # assert feature_std != 0, "feature std is zero , can't normalize feature " + str(feature_std)
                 # save distribution parameters
                 self.data_distribution_params[sample_i,feature,:] = [feature_mean,feature_std]
                 # normalize data
-                self.data[sample_i][:,feature] =  (self.data[sample_i][:,feature] - feature_mean)/feature_std 
+                if feature_std != 0:
+                    self.data[sample_i][:,feature] =  (self.data[sample_i][:,feature] - feature_mean)/feature_std 
+                else: 
+                    self.data[sample_i][:,feature] =  (self.data[sample_i][:,feature] - feature_mean) 
             sample_i += 1
         
 

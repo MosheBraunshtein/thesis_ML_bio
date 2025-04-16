@@ -21,15 +21,19 @@ model.load_state_dict(torch.load(saved_parameters_path))
 
 ## extract data    
 extractor = DataExtractor("JIGSAWS")
-data,targets = extractor.extract(task="suturing") 
+data,targets = extractor.extract(task="Needle_Passing") 
 
 ## preprocessing 
 preprocess = PreProcessing(data)
 preprocess.pchip()
+preprocess.normalization()
+# preprocess.print_features_mean_std_over_a_sample()
+preprocess.to_tensor()
 
 ## create dataset object
 test_dataset = KinematicsDataset(preprocess.data, targets)
 test_size = len(test_dataset)
+print(f"#_train_dataset : {test_size}\n")
 test_loader = DataLoader(test_dataset, batch_size=test_size, shuffle=False)
 
 assert test_size == test_loader.batch_size, "the evaluator output not include all test data"
@@ -46,6 +50,6 @@ with torch.no_grad():
 # metrics
 evaluator = ModelEvaluator(labels,preds)
 
-evaluator.plot_confusion_matrix()
+evaluator.evaluate()
 
 

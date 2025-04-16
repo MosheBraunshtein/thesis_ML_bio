@@ -14,7 +14,7 @@ from scripts.metrics import ModelEvaluator
 
 # extract data    
 extractor = DataExtractor("JIGSAWS")
-data,targets = extractor.extract(task="needle_passing") 
+data,targets = extractor.extract(task="suturing") 
 
 # preprocessing 
 preprocess = PreProcessing(data)
@@ -91,4 +91,4 @@ with torch.no_grad():
 # metrics
 evaluator = ModelEvaluator(labels,preds)
 
-evaluator.plot_confusion_matrix()
+evaluator.evaluate()

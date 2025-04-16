@@ -5,20 +5,24 @@ from torch.utils.data import Dataset, DataLoader
 from scripts.data_extractor import DataExtractor
 from scripts.preprocessing import PreProcessing
 from scripts.dataset_creator import KinematicsDataset
+import os
 
 
 # extract data    
 extractor = DataExtractor("JIGSAWS")
-data,targets = extractor.extract(task="Knot_Tying") 
+data,targets = extractor.extract(task="suturing") 
 
 # preprocessing 
 preprocess = PreProcessing(data)
-
 preprocess.pchip()
+preprocess.normalization()
+
+# preprocess.print_features_mean_std_over_a_sample()
+preprocess.to_tensor()
 
 dataset = KinematicsDataset(preprocess.data, targets) # preprocess.data = torch tensor: [#_samples, sequence length, #_input_size_features]
-
-train_loader = DataLoader(dataset, batch_size=5, shuffle=True)
+print(f"#_train_dataset : {len(dataset)}\n")
+train_loader = DataLoader(dataset, batch_size=8, shuffle=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = LSTMModel().to(device) 
@@ -49,3 +53,9 @@ for epoch in range(num_epochs):
 
     acc = correct / len(dataset)
     print(f"Epoch {epoch+1}: Loss = {running_loss/len(train_loader):.4f}, Accuracy = {acc:.4f}")
+
+# save model parameters
+save_path = os.path.join(os.path.dirname(__file__), "saved_model_parameters", "model.pth")
+torch.save(model.state_dict(), save_path)
+print("\nmodel parameters saved in: ")
+print(os.path.abspath("model.pth"))
