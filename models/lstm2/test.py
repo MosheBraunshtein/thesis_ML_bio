@@ -14,7 +14,7 @@ from scripts.metrics import ModelEvaluator
 
 # extract data    
 extractor = DataExtractor("JIGSAWS")
-data,targets = extractor.extract(task="suturing") 
+data,targets = extractor.extract(tasks=["suturing","Knot_Tying","needle_passing"]) 
 
 # preprocessing 
 preprocess = PreProcessing(data)

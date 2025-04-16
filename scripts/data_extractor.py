@@ -17,61 +17,62 @@ class DataExtractor:
         self.kinematics = []
         print(f"Extract {dataset_name} dataset ...\n")
 
-    def extract(self, task, verbose = False, dtype = torch.float32):
+    def extract(self, tasks:list, verbose = False, dtype = torch.float32):
         """Extracts data based on dataset and task."""
-        print(f"Extract {task} task ... \n ")
+        print(f"Extract {tasks} tasks ... \n ")
         kinematics_list = []
         gestures_list = []
 
-        transcriptions_dir_path = self.dataset_path / f"{task}" / "transcriptions" 
-
-        if not transcriptions_dir_path.exists():
-            raise FileNotFoundError(f"Transcription folder not found: {transcriptions_dir_path}")
-        
-        kinematics_dir_path = self.dataset_path / f"{task}" / "kinematics"
-
-        if not kinematics_dir_path.exists():
-            raise FileNotFoundError(f"Kinematic Folder not found: {kinematics_dir_path}")
-
-        files = os.listdir(transcriptions_dir_path)
-
-        for file in files:
-            file_path_transcription = transcriptions_dir_path / file
-            file_path_kinematic = kinematics_dir_path / file
-            samples = []
-            self.count_files += 1
-
-            try:
-                with open(file_path_transcription, 'r') as file_r:
-                    for line in file_r:
-                        start, end, label = line.split()
-                        samples.append((int(start), int(end), label))
-                        
-            except FileNotFoundError:
-                raise FileNotFoundError(f"File not found: {file_path_transcription}")        
-
-            # extract kinematics  
-            try:      
-                kinematics = np.loadtxt(file_path_kinematic)
-            except FileNotFoundError:
-                raise FileNotFoundError(f"File not found: {file_path_kinematic}, transcriptions folder has this file but kinematic hasn't")
-
+        for task in tasks:
+            transcriptions_dir_path = self.dataset_path / f"{task}" / "transcriptions" 
+            print(f"extract {task} task")
+            if not transcriptions_dir_path.exists():
+                raise FileNotFoundError(f"Transcription folder not found: {transcriptions_dir_path}")
             
-            if verbose : print(file + " " + file_r +" has " + self.count_files + " gestures")
+            kinematics_dir_path = self.dataset_path / f"{task}" / "kinematics"
 
-            # cut kinematics by transcription
-            for sample in samples:
-                start, end, label = sample
+            if not kinematics_dir_path.exists():
+                raise FileNotFoundError(f"Kinematic Folder not found: {kinematics_dir_path}")
 
-                num_label = label_to_number(label)
+            files = os.listdir(transcriptions_dir_path)
 
-                start_idx = start - 1
-                end_idx = end
+            for file in files:
+                file_path_transcription = transcriptions_dir_path / file
+                file_path_kinematic = kinematics_dir_path / file
+                samples = []
+                self.count_files += 1
+
+                try:
+                    with open(file_path_transcription, 'r') as file_r:
+                        for line in file_r:
+                            start, end, label = line.split()
+                            samples.append((int(start), int(end), label))
+                            
+                except FileNotFoundError:
+                    raise FileNotFoundError(f"File not found: {file_path_transcription}")        
+
+                # extract kinematics  
+                try:      
+                    kinematics = np.loadtxt(file_path_kinematic)
+                except FileNotFoundError:
+                    raise FileNotFoundError(f"File not found: {file_path_kinematic}, transcriptions folder has this file but kinematic hasn't")
+
                 
-                rows = kinematics[start_idx:end_idx, :]    
+                if verbose : print(file + " " + file_r +" has " + self.count_files + " gestures")
 
-                gestures_list.append(num_label)
-                kinematics_list.append(rows)
+                # cut kinematics by transcription
+                for sample in samples:
+                    start, end, label = sample
+
+                    num_label = label_to_number(label)
+
+                    start_idx = start - 1
+                    end_idx = end
+                    
+                    rows = kinematics[start_idx:end_idx, :]    
+
+                    gestures_list.append(num_label)
+                    kinematics_list.append(rows)
 
         self.labels = torch.tensor(gestures_list,dtype=torch.int64)
         self.kinematics = kinematics_list
